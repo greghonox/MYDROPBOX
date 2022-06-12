@@ -1,9 +1,12 @@
 from os import walk, makedirs
-from os.path import isfile, isdir, exists, join, dirname
+from os.path import isfile, isdir, exists, join, dirname, getmtime
 from hashlib import md5
 from time import sleep
 from argparse import ArgumentParser
 from shutil import copy
+
+TIME_WORKS = 2
+
 
 def list_dir(folder) -> list:
     return walk(folder)
@@ -11,7 +14,7 @@ def list_dir(folder) -> list:
 def read_md5(file: bytes) -> md5:
     return md5(file).hexdigest()
 
-def read_file_dir(file):
+def read_file_dir(file) -> read_md5:
     with open(file, 'rb') as f:
         return read_md5(f.read())
     
@@ -28,6 +31,8 @@ def compare_two_files_exists_and_md5(one: str, two: str) -> bool:
     if exists(two):
         if read_file_dir(two) == read_file_dir(one):
             return True
+        if getmtime(two) > getmtime(one):
+            return True
         return False
     return False
 
@@ -42,7 +47,7 @@ def create_directory(directory) -> bool:
         return False
     return False
     
-def change_dirs_files(dir1: str, dir2: str) -> None:
+def change_dirs_files(dir1: str, dir2: str) -> tuple: 
     for directory in list_dir(dir1):
         for file in directory[2]:
             if file:
@@ -61,13 +66,16 @@ def call() -> ArgumentParser.parse_args:
     args = parser.parse_args()
     return args
 
-def main():
+def main() -> None:
     args = call()
     print(f'SYNC {args.folder_one} -> {args.folder_two}')
     while True:
         change_dirs_files(args.folder_one, args.folder_two)
         print('sleep work')
-        sleep(10)
+        sleep(TIME_WORKS)
+        change_dirs_files(args.folder_two, args.folder_one)
+        print('sleep work')
+        sleep(TIME_WORKS)
     
 
 main()
